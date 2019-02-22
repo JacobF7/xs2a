@@ -44,9 +44,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static de.adorsys.psd2.xs2a.core.consent.ConsentStatus.*;
@@ -155,6 +153,21 @@ public class CmsPsuAisServiceInternal implements CmsPsuAisService {
         return getActualAisConsent(consentId, instanceId)
                    .map(con -> updateAccountAccessInConsent(con, accountAccessRequest))
                    .orElse(false);
+    }
+
+    @Override
+    public Optional<Map<String, ScaStatus>> psuAuthorisationStatuses(@NotNull String consentId) {
+        return aisConsentRepository.findByExternalId(consentId)
+                   .map(AisConsent::getAuthorizations)
+                   .map(this::getPsuScaStatusMap);
+    }
+
+    @NotNull
+    private Map<String, ScaStatus> getPsuScaStatusMap(List<AisConsentAuthorization> authorizations) {
+        return authorizations.stream()
+                   .filter(auth -> auth.getScaStatus() != ScaStatus.FAILED)
+                   .filter(auth -> Objects.nonNull(auth.getPsuData()))
+                   .collect(Collectors.toMap(auth -> auth.getPsuData().getPsuId(), AisConsentAuthorization::getScaStatus));
     }
 
     private boolean updateAccountAccessInConsent(AisConsent consent, CmsAisConsentAccessRequest request) {

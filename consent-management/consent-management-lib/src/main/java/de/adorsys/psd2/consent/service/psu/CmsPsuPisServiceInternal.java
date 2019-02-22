@@ -26,6 +26,7 @@ import de.adorsys.psd2.consent.domain.payment.PisCommonPaymentData;
 import de.adorsys.psd2.consent.domain.payment.PisPaymentData;
 import de.adorsys.psd2.consent.psu.api.CmsPsuPisService;
 import de.adorsys.psd2.consent.repository.PisAuthorisationRepository;
+import de.adorsys.psd2.consent.repository.PisCommonPaymentDataRepository;
 import de.adorsys.psd2.consent.repository.PisPaymentDataRepository;
 import de.adorsys.psd2.consent.repository.specification.PisAuthorisationSpecification;
 import de.adorsys.psd2.consent.repository.specification.PisPaymentDataSpecification;
@@ -43,7 +44,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -58,6 +62,7 @@ public class CmsPsuPisServiceInternal implements CmsPsuPisService {
     private final PsuDataMapper psuDataMapper;
     private final PisAuthorisationSpecification pisAuthorisationSpecification;
     private final PisPaymentDataSpecification pisPaymentDataSpecification;
+    private final PisCommonPaymentDataRepository pisCommonPaymentDataRepository;
 
     @Override
     @Transactional
@@ -156,6 +161,21 @@ public class CmsPsuPisServiceInternal implements CmsPsuPisService {
                    .filter(p -> p.getTransactionStatus().isNotFinalisedStatus())
                    .map(pd -> commonPaymentDataService.updateStatusInPaymentData(pd, status))
                    .orElse(false);
+    }
+
+    @Override
+    public Optional<Map<String, ScaStatus>> psuAuthorisationStatuses(@NotNull String paymentId) {
+        return pisCommonPaymentDataRepository.findByPaymentId(paymentId)
+                   .map(PisCommonPaymentData::getAuthorizations)
+                   .map(this::getPsuScaStatusMap);
+    }
+
+    @NotNull
+    private Map<String, ScaStatus> getPsuScaStatusMap(List<PisAuthorization> authorizations) {
+        return authorizations.stream()
+                   .filter(auth -> auth.getScaStatus() != ScaStatus.FAILED)
+                   .filter(auth -> Objects.nonNull(auth.getPsuData()))
+                   .collect(Collectors.toMap(auth -> auth.getPsuData().getPsuId(), PisAuthorization::getScaStatus));
     }
 
     private boolean updatePsuData(PisAuthorization authorisation, PsuIdData psuIdData) {

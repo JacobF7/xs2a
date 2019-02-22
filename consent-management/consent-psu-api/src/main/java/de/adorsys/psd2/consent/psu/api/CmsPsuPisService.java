@@ -23,6 +23,7 @@ import de.adorsys.psd2.xs2a.core.psu.PsuIdData;
 import de.adorsys.psd2.xs2a.core.sca.ScaStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.Optional;
 
 public interface CmsPsuPisService {
@@ -39,9 +40,9 @@ public interface CmsPsuPisService {
     /**
      * Returns Payment object by its ID
      *
-     * @param psuIdData     PSU credentials data
-     * @param paymentId     ID of Payment
-     * @param instanceId    optional ID of particular service instance
+     * @param psuIdData  PSU credentials data
+     * @param paymentId  ID of Payment
+     * @param instanceId optional ID of particular service instance
      * @return Payment object if it was found and it corresponds to the user data given in parameter
      */
     @NotNull
@@ -82,10 +83,18 @@ public interface CmsPsuPisService {
     /**
      * Updates a Status of Payment object by its ID and PSU ID
      *
-     * @param paymentId     ID of Payment
-     * @param status        Status of Payment to be set
-     * @param instanceId    optional ID of particular service instance
+     * @param paymentId  ID of Payment
+     * @param status     Status of Payment to be set
+     * @param instanceId optional ID of particular service instance
      * @return <code>true</code> if payment was found and status was updated. <code>false</code> otherwise.
      */
     boolean updatePaymentStatus(@NotNull String paymentId, @NotNull TransactionStatus status, @NotNull String instanceId);
+
+    /**
+     * Returns map of psu data and statuses of their authorisations for this payment
+     *
+     * @param paymentId ID of Payment
+     * @return map psu data and scaStatuses
+     */
+    Optional<Map<String, ScaStatus>> psuAuthorisationStatuses(@NotNull String paymentId);
 }

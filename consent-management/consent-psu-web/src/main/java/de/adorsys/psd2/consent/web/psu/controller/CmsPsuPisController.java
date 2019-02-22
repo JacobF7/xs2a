@@ -30,6 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -173,5 +174,19 @@ public class CmsPsuPisController {
         return cmsPsuPisService.updatePaymentStatus(paymentId, TransactionStatus.valueOf(status), instanceId)
                    ? ResponseEntity.ok().build()
                    : ResponseEntity.badRequest().build();
+    }
+
+    @GetMapping(path = "/{payment-id}/authorisation/psus")
+    @ApiOperation(value = "Returns map of psu data and statuses of their authorisations for this payment")
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "OK", response = Map.class),
+        @ApiResponse(code = 404, message = "Not Found")})
+    public ResponseEntity<Map<String, ScaStatus>> psuAuthorisationStatuses(
+        @ApiParam(name = "payment-id", value = "The payment identification assigned to the created payment.", example = "bf489af6-a2cb-4b75-b71d-d66d58b934d7")
+        @PathVariable("payment-id") String paymentId) {
+
+        return cmsPsuPisService.psuAuthorisationStatuses(paymentId)
+                   .map(result -> new ResponseEntity<>(result, HttpStatus.OK))
+                   .orElse(ResponseEntity.notFound().build());
     }
 }
